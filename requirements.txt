@@ -1,0 +1,14 @@
+torch @ https://download.pytorch.org/whl/cu118/torch-2.0.0%2Bcu118-cp39-cp39-linux_x86_64.whl
+torchaudio @ https://download.pytorch.org/whl/cu118/torchaudio-2.0.1%2Bcu118-cp39-cp39-linux_x86_64.whl
+torchdata==0.6.0
+torchsummary==1.5.1
+torchtext==0.15.1
+tqdm==4.65.0
+pandas==1.5.3
+numpy==1.22.4
+seaborn==0.12.2
+matplotlib==3.7.1
+
+datasets
+transformers
+evaluate
