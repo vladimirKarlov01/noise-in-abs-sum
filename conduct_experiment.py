@@ -1,23 +1,21 @@
 import os
 import warnings
-from datasets import load_dataset
+
 import pandas as pd
 import numpy as np
 import torch
-import seaborn as sns
-import matplotlib.pyplot as plt
 
 from transformers import AutoTokenizer
 import evaluate
-import wandb
 from transformers import AutoModelForSeq2SeqLM, Seq2SeqTrainingArguments, Seq2SeqTrainer, DataCollatorForSeq2Seq
-from functools import partial
-from datasets import load_from_disk
+from datasets import load_dataset, load_from_disk
+import wandb
 
+from functools import partial
 from argparse import ArgumentParser
 from pathlib import Path
 
-CACHE_DIR_PATH = "/home/vakarlov/hf-cache-dir/rouge"
+CACHE_DIR_PATH = "/home/vakarlov/hf-cache-dir"
 
 
 def preprocess_function(examples, tokenizer, checkpoint_name):
@@ -49,24 +47,21 @@ def compute_metrics(eval_pred, tokenizer, rouge):
     return {k: round(v, 4) for k, v in result.items()}
 
 
-def conduct_experiment(hf_df_path, checkpoint_name):
+def conduct_experiment(dataset_name, hf_df_path, checkpoint_name):
     # хотим функцию, принимающую на вход путь к датасету + модель, которую учим (чекпоинт)
-    os.environ["TOKENIZERS_PARALLELISM"] = "false"
-    dataset_name = hf_df_path.split('/')[-1]
-    # filtered_data = load_from_disk(hf_df_path)
-    filtered_data = load_dataset('aeslc')['train'].rename_column("email_body", "text").rename_column("subject_line", "summary")
+    filtered_data = load_from_disk(hf_df_path)
+    # filtered_data = load_dataset('aeslc')['train'].rename_column("email_body", "text").rename_column("subject_line", "summary")
 
     tokenizer = AutoTokenizer.from_pretrained(checkpoint_name)
     tokenized_data = filtered_data.map(partial(preprocess_function, tokenizer=tokenizer,
                                                checkpoint_name=checkpoint_name), batched=True)
 
-    # rouge = evaluate.load("rouge", cache_dir=CACHE_DIR_PATH)
-    rouge = evaluate.load("rouge")
+    rouge = evaluate.load("rouge", cache_dir=CACHE_DIR_PATH)
 
-    original_run_name = dataset_name + "_original_" + checkpoint_name
+    run_name = f"{dataset_name}_{checkpoint_name}_{hf_df_path.split('/')[-1][:-2]}"
 
-    wandb.login()
-    wandb.init(project='noise-in-abs-sum', name=original_run_name)
+    wandb.login(key='da5db6589b225ae96b7ef486f82d4061f936a80b')
+    wandb.init(project='noise-in-abs-sum', name=run_name)
     wandb.log({'hyperparams/retained_obj_num': filtered_data['train'].num_rows,
                # 'hyperparams/threshold' : THRESHOLD,
                # 'hyperparams/quantile': quantile,
@@ -84,12 +79,11 @@ def conduct_experiment(hf_df_path, checkpoint_name):
 
     data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer, model=model)
 
-    # batch_size, eval_batch_size = 16, 32  # V100 config
-    batch_size, eval_batch_size = 8, 16  # colab / local config
+    batch_size, eval_batch_size = 16, 32  # V100 config
     num_workers = 1
 
     training_args = Seq2SeqTrainingArguments(
-        output_dir=dataset_name + "-original-" + checkpoint_name,
+        output_dir=run_name,
         evaluation_strategy="epoch",
         learning_rate=2e-5,
         per_device_train_batch_size=batch_size,
@@ -120,19 +114,23 @@ def conduct_experiment(hf_df_path, checkpoint_name):
 
 
 if __name__ == '__main__':
-    # parser = ArgumentParser()
-    # # argument groups are useful for separating semantically different parameters
-    # data_group = parser.add_argument_group("Data paths")
-    # data_group.add_argument(
-    #     "--dataset-path", type=Path, help="Path to the filtered dataset in HF format"
-    # )
-    # data_group.add_argument(
-    #     "--model-checkpoint", type=str, help="HF model checkpoint"
-    # )
-    # args = parser.parse_args()
+    warnings.filterwarnings('ignore')
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
-    a = "C:/Users/karlo/OneDrive/Документы/Datasets/aeslc"
-    b = "t5-small"
-    conduct_experiment(hf_df_path=a, checkpoint_name=b)
+    parser = ArgumentParser()
+    # argument groups are useful for separating semantically different parameters
+    data_group = parser.add_argument_group("Data paths")
+    data_group.add_argument(
+        "--dataset-name", type=str, help="HF dataset name"
+    )
+    data_group.add_argument(
+        "--dataset-path", type=Path, help="Path to the filtered dataset in HF format"
+    )
+    data_group.add_argument(
+        "--model-checkpoint", type=str, help="HF model checkpoint"
+    )
+    args = parser.parse_args()
 
-    # conduct_experiment(hf_df_path=args.dataset_path, checkpoint_name=args.model_checkpoint)
+    conduct_experiment(dataset_name=args.dataset_name,
+                       hf_df_path=args.dataset_path,
+                       checkpoint_name=args.model_checkpoint)

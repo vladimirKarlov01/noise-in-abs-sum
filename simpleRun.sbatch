@@ -13,6 +13,7 @@
 for i in {0..0}
 do
 python conduct_experiment.py \
+--dataset-name "aeslc" \
 --dataset-path "/home/vakarlov/noise_in_abs_sum/aeslc_filtered_data_0.99/iter_1.hf" \
 --model-checkpoint "t5-small"
 done
