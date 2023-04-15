@@ -3,8 +3,8 @@ torchdata==0.6.0
 torchsummary==1.5.1
 torchtext==0.15.1
 tqdm==4.65.0
-pandas==1.5.3
-numpy==1.22.4
+pandas
+numpy
 seaborn==0.12.2
 matplotlib==3.7.1
 
