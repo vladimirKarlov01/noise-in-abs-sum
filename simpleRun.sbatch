@@ -1,11 +1,11 @@
 #! /bin/bash
-#SBATCH --job-name={noise-filtering}            # Название задачи
-#SBATCH --error={noise-filtering}-%j.err        # Файл для вывода ошибок
-#SBATCH --output={noise-filtering}-%j.log       # Файл для вывода результатов
-#SBATCH --time={00-00:30}            # Максимальное время выполнения
-#SBATCH --nodes={1}                  # Требуемое кол-во узлов
-#SBATCH --gpus={0}                   # Требуемое кол-во GPU
-#SBATCH --cpus-per-task={1}          # Требуемое кол-во CPU
+#SBATCH --job-name=iter_1            # Название задачи
+#SBATCH --error="iter_1.err"        # Файл для вывода ошибок
+#SBATCH --output="iter_1.log"       # Файл для вывода результатов
+#SBATCH --time=0-0:10:0            # Максимальное время выполнения
+#SBATCH --nodes=1                  # Требуемое кол-во узлов
+#SBATCH --gpus=0                   # Требуемое кол-во GPU
+#SBATCH --cpus-per-task=1          # Требуемое кол-во CPU
 
 # Executable
 
