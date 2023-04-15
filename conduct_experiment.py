@@ -1,5 +1,3 @@
-# хотим функцию, принимающую на вход путь к датасету + модель, которую учим (чекпоинт)
-
 import os
 import warnings
 from datasets import load_dataset
@@ -12,8 +10,15 @@ import matplotlib.pyplot as plt
 from transformers import AutoTokenizer
 import evaluate
 import wandb
-from transformers import AutoModelForSeq2SeqLM, Seq2SeqTrainingArguments, Seq2SeqTrainer
+from transformers import AutoModelForSeq2SeqLM, Seq2SeqTrainingArguments, Seq2SeqTrainer, DataCollatorForSeq2Seq
 from functools import partial
+from datasets import load_from_disk
+
+from argparse import ArgumentParser
+from pathlib import Path
+
+CACHE_DIR_PATH = "/home/vakarlov/hf-cache-dir/rouge"
+
 
 def preprocess_function(examples, tokenizer, checkpoint_name):
     if checkpoint_name.split('/')[-1].split('-')[0] == 't5':
@@ -45,20 +50,43 @@ def compute_metrics(eval_pred, tokenizer, rouge):
 
 
 def conduct_experiment(hf_df_path, checkpoint_name):
-    tokenizer = AutoTokenizer.from_pretrained(checkpoint_name)
+    # хотим функцию, принимающую на вход путь к датасету + модель, которую учим (чекпоинт)
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
-    tokenized_orig_data = raw_data.map(partial(preprocess_function, tokenizer=tokenizer,
+    dataset_name = hf_df_path.split('/')[-1]
+    # filtered_data = load_from_disk(hf_df_path)
+    filtered_data = load_dataset('aeslc')['train'].rename_column("email_body", "text").rename_column("subject_line", "summary")
+
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint_name)
+    tokenized_data = filtered_data.map(partial(preprocess_function, tokenizer=tokenizer,
                                                checkpoint_name=checkpoint_name), batched=True)
-    rouge = evaluate.load("rouge", cache_dir="/home/vakarlov/hf-cache-dir/rouge")
+
+    # rouge = evaluate.load("rouge", cache_dir=CACHE_DIR_PATH)
+    rouge = evaluate.load("rouge")
+
     original_run_name = dataset_name + "_original_" + checkpoint_name
+
     wandb.login()
     wandb.init(project='noise-in-abs-sum', name=original_run_name)
-    original_model = AutoModelForSeq2SeqLM.from_pretrained(checkpoint_name)
-    data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer, model=original_model)
-    batch_size, eval_batch_size = 16, 32  # V100 config
-    # batch_size, eval_batch_size = 8, 16  # colab / local config
+    wandb.log({'hyperparams/retained_obj_num': filtered_data['train'].num_rows,
+               # 'hyperparams/threshold' : THRESHOLD,
+               # 'hyperparams/quantile': quantile,
+               'hyperparams/checkpoint_name': checkpoint_name,
+               'hyperparams/dataset_name': dataset_name})
 
-    num_workers = 8
+    model = AutoModelForSeq2SeqLM.from_pretrained(checkpoint_name)
+    torch.cuda.empty_cache()
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+    model.to(device)
+    print('device =', device)
+
+    data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer, model=model)
+
+    # batch_size, eval_batch_size = 16, 32  # V100 config
+    batch_size, eval_batch_size = 8, 16  # colab / local config
+    num_workers = 1
 
     training_args = Seq2SeqTrainingArguments(
         output_dir=dataset_name + "-original-" + checkpoint_name,
@@ -75,13 +103,13 @@ def conduct_experiment(hf_df_path, checkpoint_name):
         dataloader_num_workers=num_workers,
     )
     trainer = Seq2SeqTrainer(
-        model=original_model,
+        model=model,
         args=training_args,
-        train_dataset=tokenized_orig_data["train"],
-        eval_dataset=tokenized_orig_data["test"],
+        train_dataset=tokenized_data["train"],
+        eval_dataset=tokenized_data["test"],
         tokenizer=tokenizer,
         data_collator=data_collator,
-        compute_metrics=compute_metrics,
+        compute_metrics=partial(compute_metrics, tokenizer=tokenizer, rouge=rouge),
     )
 
     trainer.train()
@@ -92,4 +120,19 @@ def conduct_experiment(hf_df_path, checkpoint_name):
 
 
 if __name__ == '__main__':
-    conduct_experiment(hf_df_path='', checkpoint_name='t5-small')
+    # parser = ArgumentParser()
+    # # argument groups are useful for separating semantically different parameters
+    # data_group = parser.add_argument_group("Data paths")
+    # data_group.add_argument(
+    #     "--dataset-path", type=Path, help="Path to the filtered dataset in HF format"
+    # )
+    # data_group.add_argument(
+    #     "--model-checkpoint", type=str, help="HF model checkpoint"
+    # )
+    # args = parser.parse_args()
+
+    a = "C:/Users/karlo/OneDrive/Документы/Datasets/aeslc"
+    b = "t5-small"
+    conduct_experiment(hf_df_path=a, checkpoint_name=b)
+
+    # conduct_experiment(hf_df_path=args.dataset_path, checkpoint_name=args.model_checkpoint)
