@@ -2,10 +2,10 @@
 #SBATCH --job-name=iter_1            # Название задачи
 #SBATCH --error="iter_1.err"        # Файл для вывода ошибок
 #SBATCH --output="iter_1.log"       # Файл для вывода результатов
-#SBATCH --time=0-0:10:0            # Максимальное время выполнения
+#SBATCH --time=0-0:30:0            # Максимальное время выполнения
 #SBATCH --nodes=1                  # Требуемое кол-во узлов
-#SBATCH --gpus=0                   # Требуемое кол-во GPU
-#SBATCH --cpus-per-task=1          # Требуемое кол-во CPU
+#SBATCH --gpus=1                   # Требуемое кол-во GPU
+#SBATCH --cpus-per-task=6          # Требуемое кол-во CPU
 
 # Executable
 

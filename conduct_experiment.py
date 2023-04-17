@@ -58,7 +58,7 @@ def conduct_experiment(dataset_name, hf_df_path, checkpoint_name):
 
     rouge = evaluate.load("rouge", cache_dir=CACHE_DIR_PATH)
 
-    run_name = f"{dataset_name}_{checkpoint_name}_{hf_df_path.split('/')[-1][:-2]}"
+    run_name = f"{dataset_name}_{checkpoint_name}_{hf_df_path.stem}"
 
     wandb.login(key='da5db6589b225ae96b7ef486f82d4061f936a80b')
     wandb.init(project='noise-in-abs-sum', name=run_name)
@@ -80,7 +80,7 @@ def conduct_experiment(dataset_name, hf_df_path, checkpoint_name):
     data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer, model=model)
 
     batch_size, eval_batch_size = 16, 32  # V100 config
-    num_workers = 1
+    num_workers = 6
 
     training_args = Seq2SeqTrainingArguments(
         output_dir=run_name,
