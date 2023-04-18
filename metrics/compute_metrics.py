@@ -8,10 +8,11 @@ from metrics.metrics import (
     calculate_summac_score, decode, calculate_abstractiveness_scores, SentBert
 )
 
+CACHE_DIR_PATH = "/home/vakarlov/hf-cache-dir"
 
-SACREBLEU = load("sacrebleu")
-ROUGE = load("rouge")
-BERTSCORE = load("bertscore")
+SACREBLEU = load("sacrebleu", cache_dir=CACHE_DIR_PATH)
+ROUGE = load("rouge", cache_dir=CACHE_DIR_PATH)
+BERTSCORE = load("bertscore", cache_dir=CACHE_DIR_PATH)
 SENTBERT = SentBert()
 
 
