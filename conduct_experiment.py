@@ -1,5 +1,6 @@
 import os
 import warnings
+import json
 
 import pandas as pd
 import numpy as np
@@ -14,6 +15,8 @@ import wandb
 from functools import partial
 from argparse import ArgumentParser
 from pathlib import Path
+
+from metrics.compute_metrics import compute_metrics as compute_metrics_test
 
 CACHE_DIR_PATH = "/home/vakarlov/hf-cache-dir"
 
@@ -99,27 +102,31 @@ def conduct_experiment(dataset_name, hf_df_path, checkpoint_name):
         model=model,
         args=training_args,
         train_dataset=tokenized_data["train"],
-        eval_dataset=tokenized_data["test"],
+        eval_dataset=tokenized_data["validation"],
         tokenizer=tokenizer,
         data_collator=data_collator,
         compute_metrics=partial(compute_metrics, tokenizer=tokenizer, rouge=rouge),
     )
 
     trainer.train()
+    trainer.model.save_pretrained(run_name + "/final_checkpoint/")
 
     # ================================================================================
     # TEST PREDICTION
-    trainer.model.save_pretrained(path)
     trainer_test = Seq2SeqTrainer(
         model=trainer.model,
-        compute_metrics = partial(compute_metrics, tokenizer=tokenizer)
-     )
+        tokenizer=tokenizer,
+        eval_dataset=tokenized_data["test"],
+        data_collator=data_collator,
+        dataloader_num_workers=num_workers,
+        compute_metrics=partial(compute_metrics_test, tokenizer=tokenizer)
+    )
 
-    compute_metrics_func = partial(compute_metrics, tokenizer=tokenizer)
+    test_results = trainer_test.evaluate()
+    wandb.log(test_results)
 
-    test_results = trainer_test.evaluate(test_sample)
-
-    with open…: json.dump()
+    with open(run_name + "/test_metrics.json", "w") as out_file:
+        json.dump(test_results, out_file)
     # ================================================================================
 
     wandb.finish()
