@@ -75,11 +75,10 @@ def conduct_experiment(dataset_name, hf_df_path, checkpoint_name):
     else:
         device = torch.device("cpu")
     model.to(device)
-    print('device =', device)
 
     data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer, model=model)
 
-    batch_size, eval_batch_size = 16, 32  # V100 config
+    batch_size, eval_batch_size = 64, 128  # V100 config
     num_workers = 6
 
     training_args = Seq2SeqTrainingArguments(
@@ -108,7 +107,20 @@ def conduct_experiment(dataset_name, hf_df_path, checkpoint_name):
 
     trainer.train()
 
-    # ! TEST PREDICTION POWERED PY AKIM (BATYA) !
+    # ================================================================================
+    # TEST PREDICTION
+    trainer.model.save_pretrained(path)
+    trainer_test = Seq2SeqTrainer(
+        model=trainer.model,
+        compute_metrics = partial(compute_metrics, tokenizer=tokenizer)
+     )
+
+    compute_metrics_func = partial(compute_metrics, tokenizer=tokenizer)
+
+    test_results = trainer_test.evaluate(test_sample)
+
+    with open…: json.dump()
+    # ================================================================================
 
     wandb.finish()
 
