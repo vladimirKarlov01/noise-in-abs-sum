@@ -81,7 +81,7 @@ def conduct_experiment(dataset_name, hf_df_path, checkpoint_name):
 
     data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer, model=model)
 
-    batch_size, eval_batch_size = 64, 128  # V100 config
+    batch_size, eval_batch_size = 32, 64  # V100 config
     num_workers = 6
 
     training_args = Seq2SeqTrainingArguments(
@@ -113,17 +113,24 @@ def conduct_experiment(dataset_name, hf_df_path, checkpoint_name):
 
     # ================================================================================
     # TEST PREDICTION
+    test_args = Seq2SeqTrainingArguments(
+        output_dir=run_name,
+        overwrite_output_dir = False,
+        dataloader_num_workers=num_workers,
+    )
     trainer_test = Seq2SeqTrainer(
         model=trainer.model,
+        args=test_args,
         tokenizer=tokenizer,
         eval_dataset=tokenized_data["test"],
         data_collator=data_collator,
-        dataloader_num_workers=num_workers,
         compute_metrics=partial(compute_metrics_test, tokenizer=tokenizer)
     )
 
     test_results = trainer_test.evaluate()
-    wandb.log(test_results)
+    print(test_results)
+    for metric, value in test_results.items():
+        wandb.log({f"test/{metric}" : value})
 
     with open(run_name + "/test_metrics.json", "w") as out_file:
         json.dump(test_results, out_file)
