@@ -17,23 +17,9 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 from metrics.compute_metrics import compute_metrics as compute_metrics_test
+from preprocess import preprocess_function
 
 CACHE_DIR_PATH = "/home/vakarlov/hf-cache-dir"
-
-
-def preprocess_function(examples, tokenizer, checkpoint_name):
-    if checkpoint_name.split('/')[-1].split('-')[0] == 't5':
-        prefix = "summarize: "
-    else:
-        prefix = ''
-
-    inputs = [prefix + doc for doc in examples["text"]]
-    model_inputs = tokenizer(inputs, max_length=1024, truncation=True, padding='max_length')
-
-    labels = tokenizer(text_target=examples["summary"], max_length=128, truncation=True, padding='max_length')
-
-    model_inputs["labels"] = labels["input_ids"]
-    return model_inputs
 
 
 def compute_metrics(eval_pred, tokenizer, rouge):
@@ -50,7 +36,7 @@ def compute_metrics(eval_pred, tokenizer, rouge):
     return {k: round(v, 4) for k, v in result.items()}
 
 
-def conduct_experiment(dataset_name, hf_df_path, checkpoint_name):
+def conduct_experiment(dataset_name, hf_df_path, checkpoint_name, num_workers=6):
     # хотим функцию, принимающую на вход путь к датасету + модель, которую учим (чекпоинт)
     filtered_data = load_from_disk(hf_df_path)
     # filtered_data = load_dataset('aeslc')['train'].rename_column("email_body", "text").rename_column("subject_line", "summary")
@@ -82,7 +68,6 @@ def conduct_experiment(dataset_name, hf_df_path, checkpoint_name):
     data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer, model=model)
 
     batch_size, eval_batch_size = 32, 64  # V100 config
-    num_workers = 6
 
     training_args = Seq2SeqTrainingArguments(
         output_dir=run_name,
@@ -117,6 +102,10 @@ def conduct_experiment(dataset_name, hf_df_path, checkpoint_name):
         output_dir=run_name,
         overwrite_output_dir = False,
         dataloader_num_workers=num_workers,
+        per_device_train_batch_size=batch_size,
+        per_device_eval_batch_size=eval_batch_size,
+        predict_with_generate=True,
+        include_inputs_for_metrics = True,
     )
     trainer_test = Seq2SeqTrainer(
         model=trainer.model,
@@ -125,6 +114,7 @@ def conduct_experiment(dataset_name, hf_df_path, checkpoint_name):
         eval_dataset=tokenized_data["test"],
         data_collator=data_collator,
         compute_metrics=partial(compute_metrics_test, tokenizer=tokenizer)
+        
     )
 
     test_results = trainer_test.evaluate()
@@ -145,7 +135,7 @@ if __name__ == '__main__':
 
     parser = ArgumentParser()
     # argument groups are useful for separating semantically different parameters
-    data_group = parser.add_argument_group("Data paths")
+    data_group = parser.add_argument_group("args")
     data_group.add_argument(
         "--dataset-name", type=str, help="HF dataset name"
     )
@@ -155,8 +145,12 @@ if __name__ == '__main__':
     data_group.add_argument(
         "--model-checkpoint", type=str, help="HF model checkpoint"
     )
+    data_group.add_argument(
+        "--num-workers", type=int, help="PyTorch dataloader num workers"
+    )
     args = parser.parse_args()
 
     conduct_experiment(dataset_name=args.dataset_name,
                        hf_df_path=args.dataset_path,
-                       checkpoint_name=args.model_checkpoint)
+                       checkpoint_name=args.model_checkpoint,
+                       num_workers=args.num_workers)

@@ -17,3 +17,4 @@ evaluate
 rouge_score
 sacrebleu
 bert_score
+sentencepiece
