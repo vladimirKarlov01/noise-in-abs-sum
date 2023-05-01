@@ -18,3 +18,4 @@ rouge_score
 sacrebleu
 bert_score
 sentencepiece
+protobuf==3.20.*

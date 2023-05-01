@@ -21,10 +21,10 @@ def eval_test(dataset_name, hf_df_path, checkpoint_name, num_workers=6):
     filtered_data = load_from_disk(hf_df_path)
 
     tokenizer = AutoTokenizer.from_pretrained(checkpoint_name)
-    tokenized_data = filtered_data.map(partial(preprocess_function, tokenizer=tokenizer,
+    tokenized_data = filtered_data['test'].map(partial(preprocess_function, tokenizer=tokenizer,
                                                checkpoint_name=checkpoint_name), batched=True)
     
-    run_name = f"{dataset_name}_{checkpoint_name}_{hf_df_path.stem}"
+    run_name = f"{dataset_name}_new_{checkpoint_name}_{hf_df_path.stem}"
 
     model = AutoModelForSeq2SeqLM.from_pretrained(run_name + "/final_checkpoint/")
     torch.cuda.empty_cache()
@@ -48,15 +48,16 @@ def eval_test(dataset_name, hf_df_path, checkpoint_name, num_workers=6):
         per_device_eval_batch_size=eval_batch_size,
         predict_with_generate=True,
         include_inputs_for_metrics = True,
+        report_to="wandb",
+        run_name=run_name + '_test',
     )
     trainer_test = Seq2SeqTrainer(
         model=model,
         args=test_args,
         tokenizer=tokenizer,
-        eval_dataset=tokenized_data["test"],
+        eval_dataset=tokenized_data,
         data_collator=data_collator,
         compute_metrics=partial(compute_metrics_test, tokenizer=tokenizer)
-        
     )
 
     test_results = trainer_test.evaluate()
@@ -70,7 +71,8 @@ def eval_test(dataset_name, hf_df_path, checkpoint_name, num_workers=6):
 if __name__ == '__main__':
     warnings.filterwarnings('ignore')
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
+    os.environ["WANDB_PROJECT"] = "noise-in-abs-sum"
+    
     parser = ArgumentParser()
     # argument groups are useful for separating semantically different parameters
     data_group = parser.add_argument_group("args")

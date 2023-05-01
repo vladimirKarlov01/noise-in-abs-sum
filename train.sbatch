@@ -2,10 +2,10 @@
 #SBATCH --job-name=train_run            # Название задачи
 #SBATCH --error="train_run.err"        # Файл для вывода ошибок
 #SBATCH --output="train_run.log"       # Файл для вывода результатов
-#SBATCH --time=0-01:00:0            # Максимальное время выполнения
+#SBATCH --time=0-01:50:0            # Максимальное время выполнения
 #SBATCH --nodes=1                  # Требуемое кол-во узлов
 #SBATCH --gpus=1                   # Требуемое кол-во GPU
-#SBATCH --cpus-per-task=2          # Требуемое кол-во CPU
+# SBATCH --cpus-per-task=6          # Требуемое кол-во CPU
 
 # Executable
 
@@ -14,6 +14,8 @@ for i in {0..0}
 do
 python train.py \
 --dataset-name "aeslc" \
---dataset-path "/home/vakarlov/noise_in_abs_sum/aeslc_filtered_data_0.99/iter_1.hf" \
---model-checkpoint "t5-small"
+--dataset-path "/home/vakarlov/noise-in-abs-sum/aeslc_filtered_data_new_0.98/iter_8.hf" \
+--model-checkpoint "t5-small" \
+--num-workers 6
+
 done

@@ -1,26 +1,23 @@
 import os
 import warnings
-import json
 
-import pandas as pd
 import numpy as np
 import torch
 
 from transformers import AutoTokenizer
 import evaluate
 from transformers import AutoModelForSeq2SeqLM, Seq2SeqTrainingArguments, Seq2SeqTrainer, DataCollatorForSeq2Seq
-from datasets import load_dataset, load_from_disk
+from datasets import load_from_disk
 import wandb
 
 from functools import partial
 from argparse import ArgumentParser
 from pathlib import Path
 
-from metrics.compute_metrics import compute_metrics as compute_metrics_test
 from preprocess import preprocess_function
 
 CACHE_DIR_PATH = "/home/vakarlov/hf-cache-dir"
-
+ 
 
 def compute_metrics(eval_pred, tokenizer, rouge):
     predictions, labels = eval_pred
@@ -47,7 +44,7 @@ def conduct_experiment(dataset_name, hf_df_path, checkpoint_name, num_workers=6)
 
     rouge = evaluate.load("rouge", cache_dir=CACHE_DIR_PATH)
 
-    run_name = f"{dataset_name}_{checkpoint_name}_{hf_df_path.stem}"
+    run_name = f"{dataset_name}_new_{checkpoint_name}_{hf_df_path.stem}"
 
     wandb.login(key='da5db6589b225ae96b7ef486f82d4061f936a80b')
     wandb.init(project='noise-in-abs-sum', name=run_name)
@@ -95,36 +92,6 @@ def conduct_experiment(dataset_name, hf_df_path, checkpoint_name, num_workers=6)
 
     trainer.train()
     trainer.model.save_pretrained(run_name + "/final_checkpoint/")
-
-    # ================================================================================
-    # TEST PREDICTION
-    test_args = Seq2SeqTrainingArguments(
-        output_dir=run_name,
-        overwrite_output_dir = False,
-        dataloader_num_workers=num_workers,
-        per_device_train_batch_size=batch_size,
-        per_device_eval_batch_size=eval_batch_size,
-        predict_with_generate=True,
-        include_inputs_for_metrics = True,
-    )
-    trainer_test = Seq2SeqTrainer(
-        model=trainer.model,
-        args=test_args,
-        tokenizer=tokenizer,
-        eval_dataset=tokenized_data["test"],
-        data_collator=data_collator,
-        compute_metrics=partial(compute_metrics_test, tokenizer=tokenizer)
-        
-    )
-
-    test_results = trainer_test.evaluate()
-    print(test_results)
-    for metric, value in test_results.items():
-        wandb.log({f"test/{metric}" : value})
-
-    with open(run_name + "/test_metrics.json", "w") as out_file:
-        json.dump(test_results, out_file)
-    # ================================================================================
 
     wandb.finish()
 
