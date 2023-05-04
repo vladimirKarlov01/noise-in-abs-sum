@@ -24,9 +24,9 @@ def eval_test(dataset_name, hf_df_path, checkpoint_name, num_workers=6):
     tokenized_data = filtered_data['test'].map(partial(preprocess_function, tokenizer=tokenizer,
                                                checkpoint_name=checkpoint_name), batched=True)
     
-    run_name = f"{dataset_name}_new_{checkpoint_name}_{hf_df_path.stem}"
+    run_name = f"{hf_df_path.parts[-2]}_{hf_df_path.stem}"
 
-    model = AutoModelForSeq2SeqLM.from_pretrained(run_name + "/final_checkpoint/")
+    model = AutoModelForSeq2SeqLM.from_pretrained(f"results/{run_name}/final_checkpoint/")
     torch.cuda.empty_cache()
     if torch.cuda.is_available():
         device = torch.device("cuda")
@@ -41,7 +41,7 @@ def eval_test(dataset_name, hf_df_path, checkpoint_name, num_workers=6):
     # ================================================================================
     # TEST PREDICTION
     test_args = Seq2SeqTrainingArguments(
-        output_dir=run_name,
+        output_dir=f"results/{run_name}",
         overwrite_output_dir = False,
         dataloader_num_workers=num_workers,
         per_device_train_batch_size=batch_size,
@@ -63,7 +63,7 @@ def eval_test(dataset_name, hf_df_path, checkpoint_name, num_workers=6):
     test_results = trainer_test.evaluate()
     print(test_results)
 
-    with open(run_name + "/test_metrics.json", "w") as out_file:
+    with open(f"results/{run_name}/test_metrics.json", "w") as out_file:
         json.dump(test_results, out_file)
     # ================================================================================
 

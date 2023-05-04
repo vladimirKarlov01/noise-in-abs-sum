@@ -14,13 +14,7 @@ for i in {0..0}
 do
 python eval_test_model.py \
 --dataset-name "aeslc" \
---dataset-path "/home/vakarlov/noise-in-abs-sum/aeslc_filtered_data_new_0.97/iter_0.hf" \
+--dataset-path "/home/vakarlov/noise-in-abs-sum/aeslc_MD_filtered_data_0.99/iter_5.hf" \
 --model-checkpoint "t5-small" \
---num-workers 6
-
-python eval_test_model.py \
---dataset-name "aeslc" \
---dataset-path "/home/vakarlov/noise-in-abs-sum/aeslc_filtered_data_new_0.97/iter_7.hf" \
---model-checkpoint "t5-small" \
---num-workers 6
+--num-workers 4
 done

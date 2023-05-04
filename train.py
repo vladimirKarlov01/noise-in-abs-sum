@@ -44,7 +44,7 @@ def conduct_experiment(dataset_name, hf_df_path, checkpoint_name, num_workers=6)
 
     rouge = evaluate.load("rouge", cache_dir=CACHE_DIR_PATH)
 
-    run_name = f"{dataset_name}_new_{checkpoint_name}_{hf_df_path.stem}"
+    run_name = f"{hf_df_path.parts[-2]}_{hf_df_path.stem}"
 
     wandb.login(key='da5db6589b225ae96b7ef486f82d4061f936a80b')
     wandb.init(project='noise-in-abs-sum', name=run_name)
@@ -67,7 +67,7 @@ def conduct_experiment(dataset_name, hf_df_path, checkpoint_name, num_workers=6)
     batch_size, eval_batch_size = 32, 64  # V100 config
 
     training_args = Seq2SeqTrainingArguments(
-        output_dir=run_name,
+        output_dir=f"results/{run_name}",
         evaluation_strategy="epoch",
         learning_rate=2e-5,
         per_device_train_batch_size=batch_size,
@@ -91,7 +91,7 @@ def conduct_experiment(dataset_name, hf_df_path, checkpoint_name, num_workers=6)
     )
 
     trainer.train()
-    trainer.model.save_pretrained(run_name + "/final_checkpoint/")
+    trainer.model.save_pretrained(f"results/{run_name}/final_checkpoint/")
 
     wandb.finish()
 
