@@ -33,7 +33,7 @@ def compute_metrics(eval_pred, tokenizer, rouge):
     return {k: round(v, 4) for k, v in result.items()}
 
 
-def conduct_experiment(dataset_name, hf_df_path, checkpoint_name, num_workers=6):
+def conduct_experiment(dataset_name, hf_df_path, run_name, checkpoint_name, num_workers=6):
     # хотим функцию, принимающую на вход путь к датасету + модель, которую учим (чекпоинт)
     filtered_data = load_from_disk(hf_df_path)
     # filtered_data = load_dataset('aeslc')['train'].rename_column("email_body", "text").rename_column("subject_line", "summary")
@@ -43,8 +43,6 @@ def conduct_experiment(dataset_name, hf_df_path, checkpoint_name, num_workers=6)
                                                checkpoint_name=checkpoint_name), batched=True)
 
     rouge = evaluate.load("rouge", cache_dir=CACHE_DIR_PATH)
-
-    run_name = f"{hf_df_path.parts[-2]}_{hf_df_path.stem}"
 
     wandb.login(key='da5db6589b225ae96b7ef486f82d4061f936a80b')
     wandb.init(project='noise-in-abs-sum', name=run_name)
@@ -110,6 +108,9 @@ if __name__ == '__main__':
         "--dataset-path", type=Path, help="Path to the filtered dataset in HF format"
     )
     data_group.add_argument(
+        "--run-name", type=str, help="Run name for W&B and local files saving"
+    )
+    data_group.add_argument(
         "--model-checkpoint", type=str, help="HF model checkpoint"
     )
     data_group.add_argument(
@@ -119,5 +120,6 @@ if __name__ == '__main__':
 
     conduct_experiment(dataset_name=args.dataset_name,
                        hf_df_path=args.dataset_path,
+                       run_name=args.run_name,
                        checkpoint_name=args.model_checkpoint,
                        num_workers=args.num_workers)

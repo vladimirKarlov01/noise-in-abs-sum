@@ -17,15 +17,13 @@ from preprocess import preprocess_function
 
 CACHE_DIR_PATH = "/home/vakarlov/hf-cache-dir"
 
-def eval_test(dataset_name, hf_df_path, checkpoint_name, num_workers=6):
+def eval_test(dataset_name, hf_df_path, run_name, checkpoint_name, num_workers=6):
     filtered_data = load_from_disk(hf_df_path)
 
     tokenizer = AutoTokenizer.from_pretrained(checkpoint_name)
     tokenized_data = filtered_data['test'].map(partial(preprocess_function, tokenizer=tokenizer,
                                                checkpoint_name=checkpoint_name), batched=True)
     
-    run_name = f"{hf_df_path.parts[-2]}_{hf_df_path.stem}"
-
     model = AutoModelForSeq2SeqLM.from_pretrained(f"results/{run_name}/final_checkpoint/")
     torch.cuda.empty_cache()
     if torch.cuda.is_available():
@@ -83,6 +81,9 @@ if __name__ == '__main__':
         "--dataset-path", type=Path, help="Path to the filtered dataset in HF format"
     )
     data_group.add_argument(
+        "--run-name", type=str, help="Run name for W&B and local files saving"
+    )
+    data_group.add_argument(
         "--model-checkpoint", type=str, help="HF model checkpoint"
     )
     data_group.add_argument(
@@ -92,5 +93,6 @@ if __name__ == '__main__':
 
     eval_test(dataset_name=args.dataset_name,
               hf_df_path=args.dataset_path,
+              run_name=args.run_name,
               checkpoint_name=args.model_checkpoint,
               num_workers=args.num_workers)

@@ -14,7 +14,8 @@ for i in {0..0}
 do
 python train.py \
 --dataset-name "xsum_sample" \
---dataset-path "/home/vakarlov/noise-in-abs-sum/filtered_data/xsum_sample_MD_0.97/iter_8.hf" \
+--dataset-path "/home/vakarlov/noise-in-abs-sum/filtered_data/xsum_sample_LOSS_0.99.hf" \
+--run-name "xsum_sample_LOSS_0.99" \
 --model-checkpoint "t5-small" \
 --num-workers 6
 done

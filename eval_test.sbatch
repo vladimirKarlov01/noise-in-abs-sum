@@ -13,8 +13,9 @@
 for i in {0..0}
 do
 python eval_test_model.py \
---dataset-name "aeslc" \
---dataset-path "/home/vakarlov/noise-in-abs-sum/aeslc_MD_filtered_data_0.99/iter_5.hf" \
+--dataset-name "xsum_sample" \
+--dataset-path "/home/vakarlov/noise-in-abs-sum/filtered_data/xsum_sample_LOSS_0.97.hf" \
+--run-name "xsum_sample_LOSS_0.97" \
 --model-checkpoint "t5-small" \
 --num-workers 4
 done
