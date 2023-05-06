@@ -18,4 +18,5 @@ rouge_score
 sacrebleu
 bert_score
 sentencepiece
+sentence-transformers
 protobuf==3.20.*
