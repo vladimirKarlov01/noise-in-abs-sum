@@ -3,6 +3,8 @@ import warnings
 import json
 
 import torch
+import numpy as np
+import random
 
 from transformers import AutoTokenizer
 from transformers import AutoModelForSeq2SeqLM, Seq2SeqTrainingArguments, Seq2SeqTrainer, DataCollatorForSeq2Seq
@@ -17,7 +19,14 @@ from preprocess import preprocess_function
 
 CACHE_DIR_PATH = "/home/vakarlov/hf-cache-dir"
 
-def eval_test(dataset_name, hf_df_path, run_name, checkpoint_name, num_workers=6):
+def set_random_seed(seed):
+    torch.backends.cudnn.deterministic = True
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    
+def eval_test(dataset_name, hf_df_path, run_name, checkpoint_name, num_workers=6, seed=42):
     filtered_data = load_from_disk(hf_df_path)
 
     tokenizer = AutoTokenizer.from_pretrained(checkpoint_name)
@@ -48,6 +57,7 @@ def eval_test(dataset_name, hf_df_path, run_name, checkpoint_name, num_workers=6
         include_inputs_for_metrics = True,
         report_to="wandb",
         run_name=run_name + '_test',
+        seed=seed,
     )
     trainer_test = Seq2SeqTrainer(
         model=model,
@@ -89,10 +99,16 @@ if __name__ == '__main__':
     data_group.add_argument(
         "--num-workers", type=int, help="PyTorch dataloader num workers"
     )
+    data_group.add_argument(
+        "--seed", type=int, help="Random seed"
+    )
     args = parser.parse_args()
+    
+    set_random_seed(args.seed)   
 
     eval_test(dataset_name=args.dataset_name,
               hf_df_path=args.dataset_path,
               run_name=args.run_name,
               checkpoint_name=args.model_checkpoint,
-              num_workers=args.num_workers)
+              num_workers=args.num_workers,
+              seed=args.seed)

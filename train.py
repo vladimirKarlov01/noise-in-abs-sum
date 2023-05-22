@@ -3,6 +3,7 @@ import warnings
 
 import numpy as np
 import torch
+import random
 
 from transformers import AutoTokenizer
 import evaluate
@@ -17,8 +18,14 @@ from pathlib import Path
 from preprocess import preprocess_function
 
 CACHE_DIR_PATH = "/home/vakarlov/hf-cache-dir"
- 
 
+def set_random_seed(seed):
+    torch.backends.cudnn.deterministic = True
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    
 def compute_metrics(eval_pred, tokenizer, rouge):
     predictions, labels = eval_pred
     decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=True)
@@ -33,7 +40,7 @@ def compute_metrics(eval_pred, tokenizer, rouge):
     return {k: round(v, 4) for k, v in result.items()}
 
 
-def conduct_experiment(dataset_name, hf_df_path, run_name, checkpoint_name, num_workers=6):
+def conduct_experiment(dataset_name, hf_df_path, run_name, checkpoint_name, num_workers=6, seed=42):
     # хотим функцию, принимающую на вход путь к датасету + модель, которую учим (чекпоинт)
     filtered_data = load_from_disk(hf_df_path)
     # filtered_data = load_dataset('aeslc')['train'].rename_column("email_body", "text").rename_column("subject_line", "summary")
@@ -75,6 +82,7 @@ def conduct_experiment(dataset_name, hf_df_path, run_name, checkpoint_name, num_
         num_train_epochs=4,
         predict_with_generate=True,
         fp16=True,
+        seed=seed,
         report_to="wandb",
         dataloader_num_workers=num_workers,
     )
@@ -116,10 +124,17 @@ if __name__ == '__main__':
     data_group.add_argument(
         "--num-workers", type=int, help="PyTorch dataloader num workers"
     )
+    data_group.add_argument(
+        "--seed", type=int, help="Random seed"
+    )
+    
     args = parser.parse_args()
+
+    set_random_seed(args.seed)   
 
     conduct_experiment(dataset_name=args.dataset_name,
                        hf_df_path=args.dataset_path,
                        run_name=args.run_name,
                        checkpoint_name=args.model_checkpoint,
-                       num_workers=args.num_workers)
+                       num_workers=args.num_workers,
+                       seed=args.seed)

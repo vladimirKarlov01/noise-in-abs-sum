@@ -12,7 +12,7 @@ absl-py
 nltk
 
 datasets
-transformers
+transformers==4.28.1
 evaluate
 rouge_score
 sacrebleu

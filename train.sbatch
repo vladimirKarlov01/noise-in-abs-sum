@@ -9,13 +9,45 @@
 
 # Executable
 
-### python simpleRun.py -c ./config.json --mixed="../voiceFilter/testData/mixed.wav" --ref="../voiceFilter/testData/ref.wav" --out="./outSpp"
 for i in {0..0}
 do
 python train.py \
---dataset-name "xsum_sample" \
---dataset-path "/home/vakarlov/noise-in-abs-sum/filtered_data/xsum_sample_LOSS_0.99.hf" \
---run-name "xsum_sample_LOSS_0.99" \
+--dataset-name "shuffled_aeslc_0.1" \
+--dataset-path "/home/vakarlov/noise-in-abs-sum/filtered_data/shuffled_aeslc_0.1_LOSS_0.9.hf" \
+--run-name "shuffled_aeslc_0.1_LOSS_0.9" \
 --model-checkpoint "t5-small" \
---num-workers 6
+--num-workers 6 \
+--seed 42
+
+python train.py \
+--dataset-name "shuffled_aeslc_0.1" \
+--dataset-path "/home/vakarlov/noise-in-abs-sum/filtered_data/shuffled_aeslc_0.1_LOSS_0.9.hf" \
+--run-name "shuffled_aeslc_0.1_LOSS_0.9" \
+--model-checkpoint "t5-small" \
+--num-workers 6 \
+--seed 43
+
+python train.py \
+--dataset-name "shuffled_aeslc_0.1" \
+--dataset-path "/home/vakarlov/noise-in-abs-sum/filtered_data/shuffled_aeslc_0.1_LOSS_0.9.hf" \
+--run-name "shuffled_aeslc_0.1_LOSS_0.9" \
+--model-checkpoint "t5-small" \
+--num-workers 6 \
+--seed 44
+
+python train.py \
+--dataset-name "shuffled_aeslc_0.1" \
+--dataset-path "/home/vakarlov/noise-in-abs-sum/filtered_data/shuffled_aeslc_0.1_LOSS_0.9.hf" \
+--run-name "shuffled_aeslc_0.1_LOSS_0.9" \
+--model-checkpoint "t5-small" \
+--num-workers 6 \
+--seed 45
+
+python train.py \
+--dataset-name "shuffled_aeslc_0.1" \
+--dataset-path "/home/vakarlov/noise-in-abs-sum/filtered_data/shuffled_aeslc_0.1_LOSS_0.9.hf" \
+--run-name "shuffled_aeslc_0.1_LOSS_0.9" \
+--model-checkpoint "t5-small" \
+--num-workers 6 \
+--seed 46
 done
