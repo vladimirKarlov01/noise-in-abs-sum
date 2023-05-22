@@ -8,7 +8,7 @@
 State-of-the-art models for summarization require training on big amounts of data, which is mostly collected from the web. This is the main reason why a lot of summarization datasets (e.g. AESLC, XSum and others) may contain noisy and mislabeled examples. In this study, we propose two algorithms for noise filtration, increasing the values of automatic metrics like ROUGE for models, retrained on filtered data. To investigate the limits of applicability of the proposed approaches, we also present two methods for creating synthetic noise and test the methods on noisy data.
 
 ## Структура репозитория
-* Алгоритмы фильтрации и создания шума доступны в jupyter-ноутбуке **"noise-in-abs-sum.ipynb"**.
+* Алгоритмы фильтрации и создания шума доступны в jupyter-ноутбуке -- **"noise-in-abs-sum.ipynb"**.
 * Пайплайн для обучения моделей, принимающий на вход датесет (отфильтрованный или оригинальный) и конфигурацию модели -- **"train.py"**.
 * Пайплайн для тестирования обученной модели -- **"eval_test_model.py"**.
 * Фреймворк для вычисления метрик качества суммаризации -- **"metrics/compute_metrics.py"**.
